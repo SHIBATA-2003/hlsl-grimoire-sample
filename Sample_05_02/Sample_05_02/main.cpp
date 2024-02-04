@@ -20,7 +20,9 @@ struct Light
 
     // step-1 ライト構造体にスポットライト用のメンバ変数を追加
     Vector3 spPosition;
-    float pad3;
+
+    float affectPow;
+    //float pad3;
     Vector3 spColor;
     float spRange;
     Vector3 spDirection;
@@ -68,6 +70,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     light.spPosition.y = 50.0f;
     light.spPosition.z = 0.0f;
 
+
+    light.affectPow = 0.5f;
     light.spColor.x = 10.0f;
     light.spColor.y = 10.0f;
     light.spColor.z = 10.0f;
@@ -86,14 +90,29 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     Model lightModel, bgModel, teapotModel;
     InitModel(bgModel, teapotModel, lightModel , light);
 
+
+    teapotModel.UpdateWorldMatrix(
+        {0.0f,20.0f,0.0f},
+        g_quatIdentity,
+        g_vec3One
+    );
+
     //////////////////////////////////////
     // 初期化を行うコードを書くのはここまで！！！
     //////////////////////////////////////
     auto& renderContext = g_graphicsEngine->GetRenderContext();
-
+    
+    UINT frame = 0;
     // ここからゲームループ
     while (DispatchWindowMessage())
     {
+        frame++;
+
+        light.affectPow =1.5f*(float)pow(sin((double)frame/87),4);
+        light.spColor.x = pow(sin((double)frame/300),2)*10.0f;
+        light.spColor.y = 10-light.spColor.x/2;
+        light.spColor.z = 10-light.spColor.x/2;
+
         // レンダリング開始
         g_engine->BeginFrame();
         //////////////////////////////////////
@@ -128,6 +147,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		
         // 背景モデルをドロー
         bgModel.Draw(renderContext);
+
+        //
+        Quaternion teapotQ;
+        teapotQ.SetRotationY((float)frame / 64);
+        teapotModel.UpdateWorldMatrix(
+            { (float)sin((double)frame/1000)*100,20.0f,0.0f},
+            teapotQ,
+            g_vec3One*(float)pow(sin((double)frame/200),2)
+        );
+        teapotModel.Draw(renderContext);
 
         // スポットライトモデルをドロー
         lightModel.Draw(renderContext);
